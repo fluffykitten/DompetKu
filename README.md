@@ -40,7 +40,23 @@ npm install
 # Start the Expo development server
 npx expo start
 ```
-*You can then open the app using the Expo Go application on your iOS or Android device.*
+## 📦 Building APK
+
+To generate a standalone `.apk` for Android, you can use Expo Application Services (EAS) which builds it in the cloud.
+
+1. **Install EAS CLI**:
+   ```bash
+   npm install -g eas-cli
+   ```
+2. **Login to Expo Account**:
+   ```bash
+   eas login
+   ```
+3. **Trigger Cloud Build**:
+   ```bash
+   eas build -p android --profile preview
+   ```
+*Wait a few minutes, and Expo will provide a direct download link for your compiled APK!*
 
 ## 🛠 Built With
 * React Native
