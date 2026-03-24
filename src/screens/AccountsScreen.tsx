@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ScrollView
@@ -43,6 +43,40 @@ export default function AccountsScreen() {
   const [accColor, setAccColor] = useState(INITIAL_COLORS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete confirmation modal state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+  const [deleteCountdown, setDeleteCountdown] = useState(3);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Countdown timer for delete confirmation
+  useEffect(() => {
+    if (deleteModalVisible) {
+      setDeleteCountdown(3);
+      countdownRef.current = setInterval(() => {
+        setDeleteCountdown(prev => {
+          if (prev <= 1) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    }
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [deleteModalVisible]);
+
   // Group accounts by type for display
   const cashAccounts = accounts.filter(a => a.type === 'cash');
   const bankAccounts = accounts.filter(a => a.type === 'bank');
@@ -80,28 +114,26 @@ export default function AccountsScreen() {
   };
 
   const handleDelete = (account: Account) => {
-    Alert.alert(
-      t('common.delete') + ' ' + t('common.account'),
-      `Yakin ingin menghapus akun "${account.name}"? Ini juga akan menghapus SEMUA transaksi yang terkait dengan akun ini.`,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { 
-          text: t('common.delete'), 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (accounts.length <= 1) {
-                Alert.alert('Gagal', 'Anda harus memiliki setidaknya satu akun.');
-                return;
-              }
-              await deleteAccount(account.id);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Gagal menghapus akun');
-            }
-          }
-        }
-      ]
-    );
+    if (accounts.length <= 1) {
+      Alert.alert('Gagal', 'Anda harus memiliki setidaknya satu akun.');
+      return;
+    }
+    setAccountToDelete(account);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!accountToDelete || deleteCountdown > 0) return;
+    setIsDeleting(true);
+    try {
+      await deleteAccount(accountToDelete.id);
+      setDeleteModalVisible(false);
+      setAccountToDelete(null);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Gagal menghapus akun');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSetDefault = (account: Account) => {
@@ -363,6 +395,57 @@ export default function AccountsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Delete Confirmation Modal with Countdown */}
+      <Modal
+        visible={deleteModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => { if (!isDeleting) { setDeleteModalVisible(false); setAccountToDelete(null); } }}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={[styles.deleteModalContent, { backgroundColor: colors.surface }]}>
+            {/* Warning Icon */}
+            <View style={[styles.deleteWarningIcon, { backgroundColor: (colors.danger || '#F44336') + '15' }]}>
+              <MaterialCommunityIcons name="alert-circle" size={48} color={colors.danger || '#F44336'} />
+            </View>
+
+            <Text style={[Typography.h4, { color: colors.text, textAlign: 'center', marginBottom: 8 }]}>
+              {t('common.delete')} {accountToDelete?.name || ''}
+            </Text>
+
+            <Text style={[{ color: colors.textSecondary, textAlign: 'center', marginBottom: 20, fontSize: 14, lineHeight: 20 }]}>
+              Tindakan ini akan menghapus akun beserta{' '}
+              <Text style={{ fontWeight: 'bold', color: colors.danger || '#F44336' }}>SEMUA transaksi</Text>
+              {' '}yang terkait. Tindakan ini tidak dapat dibatalkan.
+            </Text>
+
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity
+                style={[styles.deleteModalBtn, { backgroundColor: colors.chipBackground || colors.border }]}
+                onPress={() => { setDeleteModalVisible(false); setAccountToDelete(null); }}
+                disabled={isDeleting}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15 }}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.deleteModalBtn,
+                  { backgroundColor: colors.danger || '#F44336' },
+                  (deleteCountdown > 0 || isDeleting) && { opacity: 0.5 }
+                ]}
+                onPress={handleConfirmDelete}
+                disabled={deleteCountdown > 0 || isDeleting}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>
+                  {isDeleting ? '...' : deleteCountdown > 0 ? `${t('common.delete')} (${deleteCountdown}s)` : t('common.delete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -552,5 +635,43 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
+  },
+  // Delete Modal
+  deleteModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 24,
+  },
+  deleteModalContent: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  deleteWarningIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  deleteModalBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
   },
 });

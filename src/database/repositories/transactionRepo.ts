@@ -141,5 +141,18 @@ export const transactionRepo = {
     
     const result = await fetchOne<{total: number}>(query, args);
     return result?.total || 0;
+  },
+
+  // Transfer between accounts (no transaction records - just balance update)
+  transfer: async (
+    fromAccountId: number,
+    toAccountId: number,
+    amount: number,
+  ): Promise<boolean> => {
+    // Deduct from source account
+    await accountRepo.updateBalance(fromAccountId, -amount);
+    // Credit to destination account
+    await accountRepo.updateBalance(toAccountId, amount);
+    return true;
   }
 };

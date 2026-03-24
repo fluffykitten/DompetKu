@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 
 import CategoryPicker from '../components/CategoryPicker';
 import AccountPicker from '../components/AccountPicker';
+import CalculatorModal from '../components/CalculatorModal';
 
 type AddTransactionRouteProp = RouteProp<RootStackParamList, 'AddTransaction'>;
 
@@ -40,6 +41,7 @@ export default function AddTransactionScreen() {
   const [note, setNote] = useState(initialTransaction?.note || '');
   
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [saveAsQuickButton, setSaveAsQuickButton] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{amount?: string, category?: string, account?: string}>({});
@@ -221,6 +223,12 @@ export default function AddTransactionScreen() {
             maxLength={13}
             autoFocus
           />
+          <TouchableOpacity 
+            style={styles.calcButton} 
+            onPress={() => setShowCalculator(true)}
+          >
+            <MaterialCommunityIcons name="calculator" size={28} color={colors.primary} />
+          </TouchableOpacity>
         </View>
         {errors.amount && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.amount}</Text>}
 
@@ -325,6 +333,13 @@ export default function AddTransactionScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <CalculatorModal 
+        visible={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        onSubmit={(val) => setAmount(val.toString())}
+        initialValue={amount}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -370,6 +385,11 @@ const styles = StyleSheet.create({
   amountInput: {
     minWidth: '50%',
     textAlign: 'center',
+  },
+  calcButton: {
+    padding: 8,
+    position: 'absolute',
+    right: 16,
   },
   errorText: {
     marginLeft: 8,

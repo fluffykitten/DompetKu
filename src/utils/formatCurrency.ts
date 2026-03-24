@@ -14,7 +14,7 @@ export const formatCurrencyWithSetting = (
   const integerPart = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, groupSeparator);
   
   const formattedNum = `${sign}${integerPart}`;
-  return position === 'left' ? `${symbol} ${formattedNum}` : `${formattedNum} ${symbol}`;
+  return position === 'left' ? `${symbol}\u00A0${formattedNum}` : `${formattedNum}\u00A0${symbol}`;
 };
 
 /** 

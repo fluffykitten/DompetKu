@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   Switch, Alert, ActivityIndicator, Modal, TextInput
@@ -25,6 +25,20 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 // Storage keys
 const PROFILE_NAME_KEY = '@dompetku_profile_name';
 const LANGUAGE_KEY = '@dompetku_language';
+const AVATAR_COLOR_KEY = '@dompetku_avatar_color';
+
+const AVATAR_COLORS = [
+  '#F44336', // Red
+  '#E91E63', // Pink
+  '#9C27B0', // Purple
+  '#3F51B5', // Indigo
+  '#2196F3', // Blue
+  '#00BCD4', // Cyan
+  '#009688', // Teal
+  '#4CAF50', // Green
+  '#FF9800', // Orange
+  '#795548', // Brown
+];
 
 const LANGUAGES = [
   { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
@@ -50,12 +64,45 @@ export default function SettingsScreen() {
   const [isExporting, setIsExporting] = useState(false);
   const [isBacking, setIsBacking] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+
+  // Reset confirmation modal with countdown
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [resetCountdown, setResetCountdown] = useState(3);
+  const resetCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (resetModalVisible) {
+      setResetCountdown(3);
+      resetCountdownRef.current = setInterval(() => {
+        setResetCountdown(prev => {
+          if (prev <= 1) {
+            if (resetCountdownRef.current) clearInterval(resetCountdownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (resetCountdownRef.current) {
+        clearInterval(resetCountdownRef.current);
+        resetCountdownRef.current = null;
+      }
+    }
+    return () => {
+      if (resetCountdownRef.current) {
+        clearInterval(resetCountdownRef.current);
+        resetCountdownRef.current = null;
+      }
+    };
+  }, [resetModalVisible]);
   const [appLockEnabled, setAppLockEnabled] = useState(false);
 
   // Profile
   const [profileName, setProfileName] = useState('User DompetKu');
+  const [avatarColor, setAvatarColor] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState('');
 
   // Language & Currency
   const [language, setLanguage] = useState('id');
@@ -76,14 +123,16 @@ export default function SettingsScreen() {
 
   const loadSettings = async () => {
     try {
-      const [lockedStr, savedName, savedLang] = await Promise.all([
+      const [lockedStr, savedName, savedLang, savedColor] = await Promise.all([
         AsyncStorage.getItem(SECURITY_STORAGE_KEY),
         AsyncStorage.getItem(PROFILE_NAME_KEY),
         AsyncStorage.getItem(LANGUAGE_KEY),
+        AsyncStorage.getItem(AVATAR_COLOR_KEY),
       ]);
       setAppLockEnabled(lockedStr === 'true');
       if (savedName) setProfileName(savedName);
       if (savedLang) setLanguage(savedLang);
+      if (savedColor) setAvatarColor(savedColor);
     } catch (e) {}
   };
 
@@ -94,9 +143,14 @@ export default function SettingsScreen() {
       Alert.alert(t('common.error'), t('common.error')); // simplify alert
       return;
     }
+    const finalColor = editColor || colors.primary;
     try {
-      await AsyncStorage.setItem(PROFILE_NAME_KEY, trimmed);
+      await Promise.all([
+        AsyncStorage.setItem(PROFILE_NAME_KEY, trimmed),
+        AsyncStorage.setItem(AVATAR_COLOR_KEY, finalColor),
+      ]);
       setProfileName(trimmed);
+      setAvatarColor(finalColor);
       setShowProfileModal(false);
     } catch (e) {
       Alert.alert(t('common.error'), t('common.error'));
@@ -198,32 +252,25 @@ export default function SettingsScreen() {
           text: t('settings.resetConfirmTitle'), 
           style: 'destructive',
           onPress: () => {
-            Alert.alert(
-              t('settings.resetFinalConfirmTitle'),
-              t('settings.resetFinalConfirmWarning'),
-              [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                  text: t('settings.permanentDelete'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    setIsResetting(true);
-                    try {
-                      await resetAllData();
-                      Alert.alert(t('common.success'), t('common.success'));
-                    } catch (err: any) {
-                      Alert.alert(t('common.error'), err.message || t('common.error'));
-                    } finally {
-                      setIsResetting(false);
-                    }
-                  }
-                }
-              ]
-            );
+            setResetModalVisible(true);
           }
         }
       ]
     );
+  };
+
+  const handleConfirmReset = async () => {
+    if (resetCountdown > 0) return;
+    setIsResetting(true);
+    try {
+      await resetAllData();
+      setResetModalVisible(false);
+      Alert.alert(t('common.success'), t('common.success'));
+    } catch (err: any) {
+      Alert.alert(t('common.error'), err.message || t('common.error'));
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   // ── Reusable Components ──────────────────────
@@ -267,10 +314,14 @@ export default function SettingsScreen() {
         {/* Profile Section */}
         <TouchableOpacity 
           style={styles.headerSection}
-          onPress={() => { setEditName(profileName); setShowProfileModal(true); }}
+          onPress={() => { 
+            setEditName(profileName); 
+            setEditColor(avatarColor || colors.primary);
+            setShowProfileModal(true); 
+          }}
           activeOpacity={0.7}
         >
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+          <View style={[styles.avatar, { backgroundColor: avatarColor || colors.primary }]}>
             <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold' }}>{getInitials(profileName)}</Text>
           </View>
           <View style={styles.headerText}>
@@ -420,7 +471,7 @@ export default function SettingsScreen() {
             <Text style={[Typography.h4, { color: colors.text, marginBottom: 20 }]}>{t('settings.editProfile')}</Text>
             
             {/* Avatar preview */}
-            <View style={[styles.modalAvatar, { backgroundColor: colors.primary }]}>
+            <View style={[styles.modalAvatar, { backgroundColor: editColor || colors.primary }]}>
               <Text style={{ color: '#fff', fontSize: 28, fontWeight: 'bold' }}>
                 {getInitials(editName || 'U')}
               </Text>
@@ -434,14 +485,40 @@ export default function SettingsScreen() {
                 color: colors.text, 
                 backgroundColor: colors.inputBackground,
                 borderColor: colors.border,
+                marginBottom: 20
               }]}
               value={editName}
               onChangeText={setEditName}
               placeholder="Masukkan nama Anda"
               placeholderTextColor={colors.textLight}
-              autoFocus
               maxLength={30}
             />
+
+            <Text style={[Typography.label, { color: colors.textSecondary, marginBottom: 12, alignSelf: 'flex-start' }]}>
+              Warna Avatar
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24, justifyContent: 'center' }}>
+              {[colors.primary, ...AVATAR_COLORS.filter(c => c !== colors.primary)].slice(0, 10).map(color => (
+                <TouchableOpacity
+                  key={color}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    backgroundColor: color,
+                    borderWidth: 2,
+                    borderColor: (editColor || colors.primary) === color ? colors.text : 'transparent',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={() => setEditColor(color)}
+                >
+                  {(editColor || colors.primary) === color && (
+                    <MaterialCommunityIcons name="check" size={20} color="#fff" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <View style={styles.modalActions}>
               <TouchableOpacity 
@@ -626,6 +703,55 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
+      {/* Reset Confirmation Modal with Countdown */}
+      <Modal
+        visible={resetModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => { if (!isResetting) setResetModalVisible(false); }}
+      >
+        <View style={[styles.resetModalOverlay]}>
+          <View style={[styles.resetModalContent, { backgroundColor: colors.surface }]}>
+            {/* Warning Icon */}
+            <View style={[styles.resetWarningIcon, { backgroundColor: (colors.danger || '#F44336') + '15' }]}>
+              <MaterialCommunityIcons name="alert-octagon" size={48} color={colors.danger || '#F44336'} />
+            </View>
+
+            <Text style={[Typography.h4, { color: colors.danger || '#F44336', textAlign: 'center', marginBottom: 8 }]}>
+              {t('settings.resetFinalConfirmTitle')}
+            </Text>
+
+            <Text style={[{ color: colors.textSecondary, textAlign: 'center', marginBottom: 20, fontSize: 14, lineHeight: 20 }]}>
+              {t('settings.resetFinalConfirmWarning')}
+            </Text>
+
+            <View style={styles.resetModalActions}>
+              <TouchableOpacity
+                style={[styles.resetModalBtn, { backgroundColor: colors.chipBackground || colors.border }]}
+                onPress={() => setResetModalVisible(false)}
+                disabled={isResetting}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15 }}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.resetModalBtn,
+                  { backgroundColor: colors.danger || '#F44336' },
+                  (resetCountdown > 0 || isResetting) && { opacity: 0.5 }
+                ]}
+                onPress={handleConfirmReset}
+                disabled={resetCountdown > 0 || isResetting}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>
+                  {isResetting ? '...' : resetCountdown > 0 ? `${t('settings.permanentDelete')} (${resetCountdown}s)` : t('settings.permanentDelete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -737,6 +863,44 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     minWidth: 100,
+    alignItems: 'center',
+  },
+  // Reset Modal
+  resetModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 24,
+  },
+  resetModalContent: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  resetWarningIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  resetModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  resetModalBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
   languageItem: {

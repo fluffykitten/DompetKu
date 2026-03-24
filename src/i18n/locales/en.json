@@ -40,7 +40,8 @@
     "noTransactions": "No transactions this month",
     "quickActions": "Quick Actions",
     "addCashflow": "+ Income / Expense",
-    "accountsOverview": "Accounts Overview"
+    "accountsOverview": "Accounts Overview",
+    "transfer": "Transfer"
   },
   "transactions": {
     "filter": "Filter",
@@ -157,5 +158,20 @@
     "used": "% Used",
     "noBudgetStr": "(No budget configured)",
     "fileName": "DompetKu_Report_"
+  },
+  "transfer": {
+    "title": "Account Transfer",
+    "fromAccount": "From Account",
+    "toAccount": "To Account",
+    "amount": "Transfer Amount",
+    "note": "Note (optional)",
+    "confirm": "Transfer Now",
+    "success": "Transfer successful!",
+    "sameAccountError": "Source and destination accounts cannot be the same",
+    "insufficientBalance": "Insufficient balance in source account",
+    "selectFromAccount": "Select source account",
+    "selectToAccount": "Select destination account",
+    "enterAmount": "Enter amount",
+    "availableBalance": "Available balance"
   }
 }

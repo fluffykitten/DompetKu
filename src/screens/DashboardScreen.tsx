@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  RefreshControl, Dimensions, Alert
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  RefreshControl, Dimensions, Alert, Image, Linking, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -34,18 +34,19 @@ export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { t, i18n } = useTranslation();
   const { formatCurrency } = useCurrency();
-  
+
   const { accounts, refreshAccounts } = useAccounts();
   const { recentTransactions, refreshTransactions, getMonthlyTotal, deleteTransaction } = useTransactions();
-  
+
   const [refreshing, setRefreshing] = useState(false);
   const [quickButtons, setQuickButtons] = useState<QuickButton[]>([]);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [monthlyExpense, setMonthlyExpense] = useState(0);
-  
+
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [profileName, setProfileName] = useState('User');
   const [greeting, setGreeting] = useState('');
+  const [devModalVisible, setDevModalVisible] = useState(false);
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
@@ -61,12 +62,12 @@ export default function DashboardScreen() {
     const expense = await getMonthlyTotal('expense', currentMonth, currentYear);
     setMonthlyIncome(income);
     setMonthlyExpense(expense);
-    
+
     // Load quick buttons
     const buttons = await fetchAll<QuickButton>(`
-      SELECT qb.*, c.name as category_name 
-      FROM quick_buttons qb 
-      JOIN categories c ON qb.category_id = c.id 
+      SELECT qb.*, c.name as category_name
+      FROM quick_buttons qb
+      JOIN categories c ON qb.category_id = c.id
       ORDER BY qb.sort_order ASC
     `);
     setQuickButtons(buttons);
@@ -79,13 +80,13 @@ export default function DashboardScreen() {
     try {
       const name = await AsyncStorage.getItem('@dompetku_profile_name');
       if (name) setProfileName(name);
-      
+
       const hour = new Date().getHours();
       if (hour < 11) setGreeting(i18n.language === 'id' ? 'Selamat Pagi,' : 'Good Morning,');
       else if (hour < 15) setGreeting(i18n.language === 'id' ? 'Selamat Siang,' : 'Good Afternoon,');
       else if (hour < 18) setGreeting(i18n.language === 'id' ? 'Selamat Sore,' : 'Good Evening,');
       else setGreeting(i18n.language === 'id' ? 'Selamat Malam,' : 'Good Night,');
-    } catch (e) {}
+    } catch (e) { }
   };
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function DashboardScreen() {
     refreshTransactions();
     loadData();
     loadProfile();
-    
+
     // Add focus listener to refresh data when returning to tab
     const unsubscribe = navigation.addListener('focus', () => {
       refreshAccounts();
@@ -103,7 +104,7 @@ export default function DashboardScreen() {
       loadData();
       loadProfile();
     });
-    
+
     return unsubscribe;
   }, [navigation]);
 
@@ -119,7 +120,7 @@ export default function DashboardScreen() {
   };
 
   const navigateAddTransaction = (type: 'income' | 'expense') => {
-    navigation.navigate('AddTransaction', { 
+    navigation.navigate('AddTransaction', {
       transaction: { type } as any // Pass partial to pre-fill type
     });
   };
@@ -141,8 +142,8 @@ export default function DashboardScreen() {
       t('transactions.deleteConfirmDesc'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { 
-          text: t('common.delete'), 
+        {
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             await deleteTransaction(transaction.id);
@@ -173,19 +174,19 @@ export default function DashboardScreen() {
     quickButtonColumns.push([quickButtons[0], quickButtons[2]].filter(Boolean) as QuickButton[]);
     quickButtonColumns.push([quickButtons[1], quickButtons[3]].filter(Boolean) as QuickButton[]);
     for (let i = 4; i < quickButtons.length; i += 2) {
-      quickButtonColumns.push([quickButtons[i], quickButtons[i+1]].filter(Boolean) as QuickButton[]);
+      quickButtonColumns.push([quickButtons[i], quickButtons[i + 1]].filter(Boolean) as QuickButton[]);
     }
   }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView 
+      <ScrollView
         style={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={{ flex: 1, paddingRight: 12 }}>
+          <View style={{ flex: 1, paddingRight: 12, zIndex: 10 }}>
             <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.greeting, Typography.bodySmall, { color: colors.textSecondary }]}>
               {greeting} <Text style={{ color: colors.text, fontWeight: 'bold' }}>{profileName}</Text>
             </Text>
@@ -193,15 +194,20 @@ export default function DashboardScreen() {
               {currentMonthName}
             </Text>
           </View>
-          <View style={[styles.appNameContainer, { backgroundColor: colors.primary + '15' }]}>
-            <MaterialCommunityIcons name="wallet-bifold" size={20} color={colors.primary} />
-            <Text style={[styles.appName, { color: colors.primary }]}>
-              DompetKu
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={{ position: 'absolute', right: -20, top: -35, zIndex: 20, elevation: 5 }}
+            onPress={() => setDevModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={require('../../assets/icon.png')}
+              style={{ width: 150, height: 150, borderRadius: 16 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
 
-        <BalanceCard 
+        <BalanceCard
           totalBalance={totalBalance}
           monthlyIncome={monthlyIncome}
           monthlyExpense={monthlyExpense}
@@ -209,7 +215,7 @@ export default function DashboardScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.mainActionBtn, { backgroundColor: colors.incomeLight }]}
             onPress={() => navigateAddTransaction('income')}
           >
@@ -218,9 +224,8 @@ export default function DashboardScreen() {
             </View>
             <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.actionText, { color: colors.income }]}>{t('common.income')}</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.mainActionBtn, { backgroundColor: colors.expenseLight }]}
+
+          <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: colors.expenseLight }]}
             onPress={() => navigateAddTransaction('expense')}
           >
             <View style={[styles.actionIconWrapper, { backgroundColor: colors.expense }]}>
@@ -230,13 +235,29 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Transfer Button */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <TouchableOpacity
+            style={[styles.transferBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30', borderWidth: 1 }]}
+            onPress={() => navigation.navigate('AccountTransfer' as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: colors.primary }]}>
+              <MaterialCommunityIcons name="swap-horizontal" size={20} color="#fff" />
+            </View>
+            <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.actionText, { color: colors.primary }]}>
+              {t('dashboard.transfer')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Account Strip Summary */}
         <View style={styles.accountsSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.accountsList}>
             {accounts.map(acc => (
               <View key={acc.id} style={[styles.accountBadge, { backgroundColor: acc.color + '15' }]}>
                 <Text style={[styles.accountBadgeName, { color: colors.text }]}>{acc.name}</Text>
-                <Text style={[styles.accountBadgeBalance, { color: acc.color, fontWeight: 'bold' }]}>
+                <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.accountBadgeBalance, { color: acc.color, fontWeight: 'bold' }]}>
                   {formatCurrency(acc.balance)}
                 </Text>
               </View>
@@ -256,10 +277,10 @@ export default function DashboardScreen() {
               {quickButtonColumns.map((col, colIndex) => (
                 <View key={colIndex} style={{ width: Dimensions.get('window').width * 0.42, marginRight: 12 }}>
                   {col.map(btn => (
-                    <QuickActionButton 
-                      key={btn.id} 
-                      button={btn} 
-                      onPress={handleQuickAction} 
+                    <QuickActionButton
+                      key={btn.id}
+                      button={btn}
+                      onPress={handleQuickAction}
                     />
                   ))}
                 </View>
@@ -279,11 +300,11 @@ export default function DashboardScreen() {
                 <Text style={{ color: colors.primary, fontWeight: '500' }}>{t('dashboard.seeAll')}</Text>
               </TouchableOpacity>
             </View>
-            
+
             <View style={[styles.listContainer, { backgroundColor: colors.surface, paddingHorizontal: 16, paddingTop: 16 }]}>
               {budgets.slice(0, 3).map((budget, index) => (
-                <TouchableOpacity 
-                  key={budget.id} 
+                <TouchableOpacity
+                  key={budget.id}
                   style={{ marginBottom: 16 }}
                   onPress={() => (navigation as any).navigate('BudgetTab')}
                   activeOpacity={0.8}
@@ -298,7 +319,7 @@ export default function DashboardScreen() {
                       </Text>
                     </View>
                   </View>
-                  
+
                   <BudgetProgressBar
                     label=""
                     spent={budget.spent || 0}
@@ -321,13 +342,13 @@ export default function DashboardScreen() {
               <Text style={{ color: colors.primary, fontWeight: '500' }}>{t('dashboard.seeAll')}</Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={[styles.listContainer, { backgroundColor: colors.surface }]}>
             {recentTransactions.length > 0 ? (
               recentTransactions.map((tx, index) => (
                 <View key={tx.id}>
-                  <TransactionItem 
-                    transaction={tx} 
+                  <TransactionItem
+                    transaction={tx}
                     showDate={true}
                     onPress={handleTransactionPress}
                   />
@@ -346,17 +367,61 @@ export default function DashboardScreen() {
             )}
           </View>
         </View>
-        
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <TransactionOptionsModal 
+      <TransactionOptionsModal
         visible={!!selectedTx}
         transaction={selectedTx}
         onClose={() => setSelectedTx(null)}
         onEdit={handleEditTx}
         onDelete={confirmDelete}
       />
+
+      {/* Developer Info Modal */}
+      <Modal
+        visible={devModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setDevModalVisible(false)}
+      >
+        <View style={styles.devModalOverlay}>
+          <View style={[styles.devModalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.devAvatarContainer, { backgroundColor: '#FFF3E0', borderWidth: 2, borderColor: '#FFB74D' }]}>
+              <MaterialCommunityIcons name="cat" size={48} color="#FF9800" />
+            </View>
+
+            <Text style={[Typography.h3, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
+              DompetKu
+            </Text>
+
+            <Text style={[Typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 }]}>
+              created by fluffykitten
+            </Text>
+
+            <TouchableOpacity
+              style={styles.devGithubBtn}
+              onPress={() => {
+                setDevModalVisible(false);
+                Linking.openURL('https://github.com/fluffykitten');
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="github" size={22} color="#fff" />
+              <Text style={styles.devGithubText}>GitHub Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.devCloseBtn, { backgroundColor: colors.borderLight || '#f0f0f0' }]}
+              onPress={() => setDevModalVisible(false)}
+            >
+              <Text style={[Typography.button, { color: colors.text }]}>{t('common.close') || 'Tutup'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -495,5 +560,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+  },
+  devModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 24,
+  },
+  devModalContent: {
+    width: '100%',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  devAvatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  devGithubBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#24292e',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 12,
+  },
+  devGithubText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  devCloseBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  transferBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 16,
   },
 });

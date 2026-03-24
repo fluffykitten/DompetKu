@@ -40,7 +40,8 @@
     "noTransactions": "Belum ada transaksi bulan ini",
     "quickActions": "Aksi Cepat",
     "addCashflow": "+ Pemasukan / Pengeluaran",
-    "accountsOverview": "Ringkasan Akun"
+    "accountsOverview": "Ringkasan Akun",
+    "transfer": "Transfer"
   },
   "transactions": {
     "filter": "Filter",
@@ -157,5 +158,20 @@
     "used": "% Terpakai",
     "noBudgetStr": "(Belum ada anggaran yang diatur)",
     "fileName": "Laporan_DompetKu_"
+  },
+  "transfer": {
+    "title": "Transfer Antar Akun",
+    "fromAccount": "Dari Akun",
+    "toAccount": "Ke Akun",
+    "amount": "Nominal Transfer",
+    "note": "Catatan (opsional)",
+    "confirm": "Transfer Sekarang",
+    "success": "Transfer berhasil!",
+    "sameAccountError": "Akun asal dan tujuan tidak boleh sama",
+    "insufficientBalance": "Saldo akun asal tidak mencukupi",
+    "selectFromAccount": "Pilih akun asal",
+    "selectToAccount": "Pilih akun tujuan",
+    "enterAmount": "Masukkan nominal",
+    "availableBalance": "Saldo tersedia"
   }
 }

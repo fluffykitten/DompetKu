@@ -70,15 +70,8 @@ export const accountRepo = {
   },
 
   delete: async (id: number): Promise<boolean> => {
-    // Check if used in transactions
-    const countResult = await fetchOne<{count: number}>(
-      'SELECT count(*) as count FROM transactions WHERE account_id = ?', 
-      [id]
-    );
-    
-    if (countResult && countResult.count > 0) {
-      throw new Error('Akun ini tidak bisa dihapus karena masih punya riwayat transaksi. Hapus transaksinya terlebih dahulu.');
-    }
+    // Cascade-delete all transactions associated with this account first
+    await executeSql('DELETE FROM transactions WHERE account_id = ?', [id]);
 
     const result = await executeSql('DELETE FROM accounts WHERE id = ?', [id]);
     return result.changes > 0;

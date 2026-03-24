@@ -16,6 +16,7 @@ import { useAccounts } from '../hooks/useAccounts';
 import { useCategories } from '../hooks/useCategories';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { transactionRepo } from '../database/repositories/transactionRepo';
+import CalculatorModal from '../components/CalculatorModal';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +47,7 @@ export default function OnboardingScreen() {
   
   // Local state to store initial balances before saving
   const [balances, setBalances] = useState<{ [id: number]: string }>({});
+  const [calcAccountId, setCalcAccountId] = useState<number | null>(null);
 
   useEffect(() => {
     // initialize balances to "0"
@@ -225,14 +227,22 @@ export default function OnboardingScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 6 }}>
                 {isId ? 'Saldo Awal' : 'Starting Balance'} ({selectedCurrency.symbol})
               </Text>
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.border, height: 44, marginBottom: 0 }]}
-                value={balances[acc.id] || ''}
-                onChangeText={v => setBalances(p => ({ ...p, [acc.id]: v }))}
-                placeholder="0"
-                placeholderTextColor={colors.textLight}
-                keyboardType="numeric"
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TextInput
+                  style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, height: 44, marginBottom: 0 }]}
+                  value={balances[acc.id] || ''}
+                  onChangeText={v => setBalances(p => ({ ...p, [acc.id]: v }))}
+                  placeholder="0"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity 
+                  style={{ padding: 8, marginLeft: 8, marginBottom: 40 }} 
+                  onPress={() => setCalcAccountId(acc.id)}
+                >
+                  <MaterialCommunityIcons name="calculator" size={28} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         ))}
@@ -319,6 +329,17 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <CalculatorModal 
+        visible={calcAccountId !== null}
+        onClose={() => setCalcAccountId(null)}
+        onSubmit={(val) => {
+          if (calcAccountId !== null) {
+            setBalances(p => ({ ...p, [calcAccountId]: val.toString() }));
+          }
+        }}
+        initialValue={calcAccountId !== null ? balances[calcAccountId] : ''}
+      />
     </SafeAreaView>
   );
 }

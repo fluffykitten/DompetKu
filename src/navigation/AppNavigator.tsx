@@ -19,6 +19,7 @@ import BudgetScreen from '../screens/BudgetScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import AccountsScreen from '../screens/AccountsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import AccountTransferScreen from '../screens/AccountTransferScreen';
 
 // Navigation parameter types
 export type RootStackParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   AddTransaction: { transaction?: Transaction };
   Categories: undefined;
   Accounts: undefined;
+  AccountTransfer: undefined;
 };
 
 export type MainTabParamList = {
@@ -183,6 +185,14 @@ export default function AppNavigator() {
           name="Accounts" 
           component={AccountsScreen} 
           options={{ title: t('navigation.accounts') }}
+        />
+        <Stack.Screen 
+          name="AccountTransfer" 
+          component={AccountTransferScreen} 
+          options={{ 
+            title: t('transfer.title'),
+            presentation: 'modal' 
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

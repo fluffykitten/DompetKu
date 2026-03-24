@@ -43,7 +43,7 @@ export default function BalanceCard({
           <Text style={[styles.label, { color: 'rgba(255,255,255,0.8)' }]}>
             {t('dashboard.totalBalance', {defaultValue: 'Total Saldo'})}
           </Text>
-          <Text style={[styles.balance, Typography.amount, { color: '#ffffff' }]}>
+          <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.balance, Typography.amount, { color: '#ffffff' }]}>
             {formatCurrency(totalBalance)}
           </Text>
         </View>
@@ -62,7 +62,7 @@ export default function BalanceCard({
               {t('common.income')}
             </Text>
           </View>
-          <Text style={[styles.statAmount, Typography.h4, { color: '#ffffff' }]}>
+          <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.statAmount, Typography.h4, { color: '#ffffff' }]}>
             {formatCurrency(monthlyIncome)}
           </Text>
         </View>
@@ -74,7 +74,7 @@ export default function BalanceCard({
               {t('common.expense')}
             </Text>
           </View>
-          <Text style={[styles.statAmount, Typography.h4, { color: '#ffffff' }]}>
+          <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.statAmount, Typography.h4, { color: '#ffffff' }]}>
             {formatCurrency(monthlyExpense)}
           </Text>
         </View>

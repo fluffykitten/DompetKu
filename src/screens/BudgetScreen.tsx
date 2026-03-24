@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 import BudgetProgressBar from '../components/BudgetProgressBar';
 import CategoryPicker from '../components/CategoryPicker';
+import CalculatorModal from '../components/CalculatorModal';
 
 export default function BudgetScreen() {
   const { colors } = useTheme();
@@ -45,6 +46,7 @@ export default function BudgetScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [amountInput, setAmountInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   
   // Refresh on focus
   useEffect(() => {
@@ -242,6 +244,12 @@ export default function BudgetScreen() {
                   placeholder="0"
                   placeholderTextColor={colors.textLight}
                 />
+                <TouchableOpacity 
+                  style={{ padding: 8 }} 
+                  onPress={() => setShowCalculator(true)}
+                >
+                  <MaterialCommunityIcons name="calculator" size={28} color={colors.primary} />
+                </TouchableOpacity>
               </View>
               <Text style={[Typography.caption, { color: colors.textLight, marginTop: 4 }]}>
                 (Set 0 {t('budget.deleteConfirmTitle')})
@@ -265,6 +273,12 @@ export default function BudgetScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      <CalculatorModal 
+        visible={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        onSubmit={(val) => setAmountInput(val.toString())}
+        initialValue={amountInput}
+      />
     </SafeAreaView>
   );
 }
