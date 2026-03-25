@@ -5,6 +5,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Colors, ColorScheme } from './colors';
 import { ThemeMode } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ThemeContextType {
   mode: ThemeMode;
@@ -20,17 +21,29 @@ const ThemeContext = createContext<ThemeContextType>({
   setTheme: () => {},
 });
 
+const THEME_STORAGE_KEY = '@dompetku_theme_mode';
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>('light');
+
+  // Load saved theme on mount
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then(saved => {
+      if (saved === 'dark' || saved === 'light') setMode(saved);
+    }).catch(() => {});
+  }, []);
 
   const colors = mode === 'light' ? Colors.light : Colors.dark;
 
   const toggleTheme = () => {
-    setMode(prev => (prev === 'light' ? 'dark' : 'light'));
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, newMode).catch(() => {});
   };
 
   const setTheme = (newMode: ThemeMode) => {
     setMode(newMode);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, newMode).catch(() => {});
   };
 
   return (

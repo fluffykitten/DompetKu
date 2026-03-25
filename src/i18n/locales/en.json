@@ -173,5 +173,18 @@
     "selectToAccount": "Select destination account",
     "enterAmount": "Enter amount",
     "availableBalance": "Available balance"
+  },
+  "widget": {
+    "settingsTitle": "Widget Settings",
+    "settingsDesc": "Customize the elements displayed on your Home Screen Widget.",
+    "showQuickActions": "Show Quick Actions",
+    "showQuickActionsDesc": "Income, Expense, and Transfer buttons",
+    "showBalance": "Show Total Balance",
+    "showBalanceDesc": "Total balance across all accounts",
+    "showRecentTx": "Show Recent Transactions",
+    "showRecentTxDesc": "List of 3 most recent transactions",
+    "note": "The Android widget will auto-update periodically. You may need to tap the widget to force an instant refresh.",
+    "menuTitle": "Home Screen Widget",
+    "menuSubtitle": "Customize your OS widget appearance"
   }
 }

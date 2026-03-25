@@ -2,7 +2,8 @@
   "expo": {
     "name": "DompetKu",
     "slug": "dompetku-fluffykitten",
-    "version": "1.1.0",
+    "version": "1.2.0",
+    "scheme": "dompetkufk",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -31,7 +32,23 @@
     },
     "plugins": [
       "@react-native-community/datetimepicker",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "DompetKuWidget",
+              "label": "DompetKu Dashboard",
+              "minWidth": "320dp",
+              "minHeight": "220dp",
+              "description": "Widget Beranda DompetKu",
+              "previewImage": "./assets/icon.png",
+              "updatePeriodMillis": 3600000
+            }
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {

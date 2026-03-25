@@ -18,13 +18,23 @@ DompetKu (My Wallet) helps you manage your income, track your daily expenses, an
 - 🧮 **In-App Calculator**: Fast pop-up native calculator seamlessly integrated into all amount inputs for quick math.
 - 💵 **Dynamic Currency Engine**: Full support for real-time customizable currencies, including symbols, positioning, and decimal separators across the entire app.
 - 🌍 **Multi-Language Support**: Fully localized in English and Indonesian (Bahasa Indonesia).
-- 🔒 **Biometric Security**: Keep your financials private with Face ID / Fingerprint App Lock configurations.
+- 🔒 **Biometric Security**: Keep your financials private with Face ID / Fingerprint App Lock with a 1-minute grace period for seamless app switching.
 - 📊 **Advanced Excel Export**: Generate drop-dead gorgeous `.xlsx` files to your device containing your entire transaction history, balance sheets, and categorical pivot summaries in seconds.
 - 🎯 **Visual Budgeting**: Set categorized monthly budgets and watch your progress visually via dynamic bars.
+- 📱 **Android Home Screen Widget**: Customizable OS-level widget showing balance, quick action buttons, and recent transactions—with dark mode and multi-language support.
 - 💾 **100% Offline & Private**: Data is secured strictly to your local storage. Cloud-free by design with full Backup & Restore JSON capabilities natively.
 - 🧙‍♂️ **First-Time Wizard**: Seamless onboarding flow providing default financial accounts (Cash, Bank) and basic categories you can configure at launch.
 
 ## 📜 Changelog
+
+### v1.2.0
+- **Feature**: Android Home Screen Widget with customizable layout (balance, quick actions, recent transactions).
+- **Feature**: Widget supports dark mode and multi-language (ID/EN) automatically.
+- **Feature**: Deep link routing from widget buttons directly to Income, Expense, or Transfer screens.
+- **Feature**: Biometric security grace period (1 minute) for seamless app switching.
+- **Improvement**: Theme preference now persists across app restarts.
+- **Improvement**: App version in Settings now reads dynamically from config.
+- **Improvement**: Splash screen icon enlarged for better visibility.
 
 ### v1.1.0
 - **Feature**: Added a built-in interactive Calculator safely integrated across the app (Transactions, Transfers, Budgeting, and Onboarding).
@@ -69,9 +79,10 @@ To generate a standalone `.apk` for Android, you can use Expo Application Servic
 * React Native
 * Expo Ecosystem
 * SQLite
-* React Navigation v6
+* React Navigation v7
 * React-i18next
 * Async Storage
+* Zustand
 
 <br>
 <div align="center">

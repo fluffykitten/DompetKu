@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,9 +7,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/ThemeContext';
-import { Transaction, Account } from '../types';
+import { Transaction } from '../types';
 
-// Temporarily define empty screens to setup navigation
 import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import StatisticsScreen from '../screens/StatisticsScreen';
@@ -20,6 +19,7 @@ import CategoriesScreen from '../screens/CategoriesScreen';
 import AccountsScreen from '../screens/AccountsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AccountTransferScreen from '../screens/AccountTransferScreen';
+import { WidgetSettingsScreen } from '../screens/WidgetSettingsScreen';
 
 // Navigation parameter types
 export type RootStackParamList = {
@@ -29,6 +29,7 @@ export type RootStackParamList = {
   Categories: undefined;
   Accounts: undefined;
   AccountTransfer: undefined;
+  WidgetSettings: undefined;
 };
 
 export type MainTabParamList = {
@@ -145,8 +146,61 @@ export default function AppNavigator() {
 
   if (!initialRoute) return null;
 
+  // Deep link configuration untuk widget OS
+  const linking: LinkingOptions<RootStackParamList> = useMemo(() => ({
+    prefixes: ['dompetkufk://'],
+    config: {
+      screens: {
+        MainTabs: {
+          screens: {
+            Dashboard: 'dashboard',
+          },
+        },
+        AddTransaction: {
+          path: 'add-transaction',
+          parse: {
+            transaction: (_: string) => undefined, // handled below
+          },
+        },
+        AccountTransfer: 'transfer',
+      },
+    },
+    // Custom getStateFromPath to properly map ?type= to transaction param
+    getStateFromPath: (path, config) => {
+      // Handle add-transaction?type=income|expense
+      if (path.startsWith('add-transaction')) {
+        const url = new URL(`dompetkufk://${path}`);
+        const type = url.searchParams.get('type') as 'income' | 'expense' | null;
+        return {
+          routes: [
+            { name: 'MainTabs' },
+            { 
+              name: 'AddTransaction', 
+              params: { 
+                transaction: { type: type || 'expense' } as any 
+              } 
+            },
+          ],
+        };
+      }
+      // Handle transfer
+      if (path === 'transfer') {
+        return {
+          routes: [
+            { name: 'MainTabs' },
+            { name: 'AccountTransfer' },
+          ],
+        };
+      }
+      // Default: dashboard
+      return {
+        routes: [{ name: 'MainTabs' }],
+      };
+    },
+  }), []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{
@@ -193,6 +247,11 @@ export default function AppNavigator() {
             title: t('transfer.title'),
             presentation: 'modal' 
           }}
+        />
+        <Stack.Screen 
+          name="WidgetSettings" 
+          component={WidgetSettingsScreen} 
+          options={{ title: t('widget.settingsTitle') }}
         />
       </Stack.Navigator>
     </NavigationContainer>

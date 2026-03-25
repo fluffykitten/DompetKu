@@ -19,6 +19,7 @@ import { useCurrency, CurrencySetting, defaultCurrency } from '../context/Curren
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { SECURITY_STORAGE_KEY } from '../components/SecurityWrapper';
+import Constants from 'expo-constants';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -381,6 +382,13 @@ export default function SettingsScreen() {
             subtitle={`${currency.code} (${currency.symbol})`}
             onPress={() => setShowCurrencyModal(true)}
           />
+
+          <SettingItem 
+            icon="widgets" 
+            title={t('widget.menuTitle')} 
+            subtitle={t('widget.menuSubtitle')}
+            onPress={() => navigation.navigate('WidgetSettings')}
+          />
         </View>
 
         {/* Security */}
@@ -447,7 +455,7 @@ export default function SettingsScreen() {
         {/* App Info */}
         <View style={styles.infoSection}>
           <Text style={{ color: colors.textLight, textAlign: 'center', marginBottom: 4 }}>
-            DompetKu v1.0.0
+            DompetKu v{Constants.expoConfig?.version || '1.0.0'}
           </Text>
           <Text style={{ color: colors.textLight, textAlign: 'center', fontSize: 12, marginBottom: 8 }}>
             {t('settings.aboutApp')}

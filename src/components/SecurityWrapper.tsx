@@ -19,6 +19,7 @@ export const SecurityWrapper: React.FC<{ children: React.ReactNode }> = ({ child
   const { colors } = useTheme();
   const { t } = useTranslation();
   const appState = useRef(AppState.currentState);
+  const backgroundTimestamp = useRef<number | null>(null);
 
   // Mencegah multiple prompt saat dialog biometrik muncul (karena bisa mengubah AppState)
   const isPrompting = useRef(false);
@@ -39,6 +40,11 @@ export const SecurityWrapper: React.FC<{ children: React.ReactNode }> = ({ child
         nextAppState === 'active'
       ) {
         checkSecurityOnResume();
+      } else if (
+        appState.current === 'active' &&
+        nextAppState.match(/inactive|background/)
+      ) {
+        backgroundTimestamp.current = Date.now();
       }
       appState.current = nextAppState;
     });
@@ -75,6 +81,18 @@ export const SecurityWrapper: React.FC<{ children: React.ReactNode }> = ({ child
 
   const checkSecurityOnResume = async () => {
     if (isPrompting.current) return;
+
+    // Check grace period (1 minute)
+    const GRACE_PERIOD_MS = 60 * 1000;
+    if (backgroundTimestamp.current && !isLockedRef.current) {
+      const timeElapsed = Date.now() - backgroundTimestamp.current;
+      if (timeElapsed < GRACE_PERIOD_MS) {
+        backgroundTimestamp.current = null;
+        return;
+      }
+    }
+    backgroundTimestamp.current = null;
+
     try {
       const lockedStr = await AsyncStorage.getItem(SECURITY_STORAGE_KEY);
       // Bug Fix #4: Gunakan isLockedRef.current, bukan isLocked (stale closure)
