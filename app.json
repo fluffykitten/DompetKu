@@ -2,7 +2,7 @@
   "expo": {
     "name": "DompetKu",
     "slug": "dompetku-fluffykitten",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "scheme": "dompetkufk",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

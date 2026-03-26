@@ -144,9 +144,8 @@ export default function AppNavigator() {
     checkOnboarding();
   }, []);
 
-  if (!initialRoute) return null;
-
   // Deep link configuration untuk widget OS
+  // NOTE: useMemo must be called BEFORE any conditional return to comply with React's Rules of Hooks
   const linking: LinkingOptions<RootStackParamList> = useMemo(() => ({
     prefixes: ['dompetkufk://'],
     config: {
@@ -198,6 +197,8 @@ export default function AppNavigator() {
       };
     },
   }), []);
+
+  if (!initialRoute) return null;
 
   return (
     <NavigationContainer linking={linking}>

@@ -27,6 +27,9 @@ DompetKu (My Wallet) helps you manage your income, track your daily expenses, an
 
 ## 📜 Changelog
 
+### v1.2.1
+- **Fix**: Resolved "rendered more hooks than during the previous render" bug in `AppNavigator` caused by conditional early return before hooks.
+
 ### v1.2.0
 - **Feature**: Android Home Screen Widget with customizable layout (balance, quick actions, recent transactions).
 - **Feature**: Widget supports dark mode and multi-language (ID/EN) automatically.
