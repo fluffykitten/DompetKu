@@ -143,16 +143,49 @@ export const transactionRepo = {
     return result?.total || 0;
   },
 
-  // Transfer between accounts (no transaction records - just balance update)
+  // Transfer between accounts
   transfer: async (
     fromAccountId: number,
     toAccountId: number,
     amount: number,
   ): Promise<boolean> => {
+    // Helper to get or create transfer categories
+    const getTransferCategory = async (type: string, name: string) => {
+      const cat = await fetchOne<{id: number}>('SELECT id FROM categories WHERE name = ? AND type = ?', [name, type]);
+      if (cat) return cat.id;
+      
+      const res = await executeSql(
+        "INSERT INTO categories (name, icon, color, type, is_default) VALUES (?, 'swap-horizontal', '#6B7280', ?, 0)",
+        [name, type]
+      );
+      return res.lastInsertRowId;
+    };
+
+    const expenseCatId = await getTransferCategory('expense', 'Transfer Keluar');
+    const incomeCatId = await getTransferCategory('income', 'Transfer Masuk');
+    
+    const now = new Date().toISOString();
+
     // Deduct from source account
-    await accountRepo.updateBalance(fromAccountId, -amount);
+    await transactionRepo.create({
+      type: 'expense',
+      amount: amount,
+      category_id: expenseCatId,
+      account_id: fromAccountId,
+      date: now,
+      note: 'Transfer Keluar'
+    });
+    
     // Credit to destination account
-    await accountRepo.updateBalance(toAccountId, amount);
+    await transactionRepo.create({
+      type: 'income',
+      amount: amount,
+      category_id: incomeCatId,
+      account_id: toAccountId,
+      date: now,
+      note: 'Transfer Masuk'
+    });
+    
     return true;
   }
 };

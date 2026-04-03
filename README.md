@@ -27,6 +27,11 @@ DompetKu (My Wallet) helps you manage your income, track your daily expenses, an
 
 ## 📜 Changelog
 
+### v1.2.2
+- **Fix**: Account transfer balances no longer revert after an app restart. Transfers are now properly persisted into the transaction history automatically.
+- **Improvement**: Harmonized the successful transfer page navigation UI (removed the system popup).
+- **Settings**: Temporarily disabled the Android Native Widget plugin while pending UI enhancements.
+
 ### v1.2.1
 - **Fix**: Resolved "rendered more hooks than during the previous render" bug in `AppNavigator` caused by conditional early return before hooks.
 

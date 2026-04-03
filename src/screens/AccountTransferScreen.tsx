@@ -67,9 +67,7 @@ export default function AccountTransferScreen() {
     try {
       await transactionRepo.transfer(fromAccountId, toAccountId, numAmount);
       await refreshAccounts();
-      Alert.alert(t('common.success'), t('transfer.success'), [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      navigation.goBack();
     } catch (err: any) {
       Alert.alert(t('common.error'), err.message || t('common.error'));
     } finally {
